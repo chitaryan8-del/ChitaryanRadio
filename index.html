@@ -121,6 +121,14 @@
 <script>
 try{ Telegram.WebApp.ready(); Telegram.WebApp.expand(); }catch(e){}
 
+// ЗАПОЛНИ ЭТИ ДВЕ СТРОКИ ДАННЫМИ ИЗ SUPABASE (Project Settings → API) — те же, что в upload.html
+const SUPABASE_URL = 'https://czqoftvkccivkinttswl.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6cW9mdHZrY2NpdmtpbnR0c3dsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk5ODQwNDQsImV4cCI6MjEwNTU2MDA0NH0.A1fSOyYv_T8c1tLFncmX-bL90NIbZYDhnL_JvqcGlNM';
+const BUCKET = 'tracks';
+const STATION_NAME = 'CHITARYAN RADIO';
+const STATION_SUBTITLE = 'STREET SELECT';
+const STATION_ABOUT = 'Здесь можно написать пару строк о твоей радиостанции.';
+
 (function(){
   const splash = document.getElementById('splash');
   const splashLogo = document.getElementById('splashLogo');
@@ -190,7 +198,7 @@ async function getDuration(url){
     const finish = (val) => { if(!done){ done = true; resolve(val); } };
     a.addEventListener('loadedmetadata', () => finish(a.duration || 0));
     a.addEventListener('error', () => finish(0));
-    setTimeout(() => finish(0), 20000);
+    setTimeout(() => finish(0), 15000);
   });
 }
 
@@ -227,7 +235,35 @@ function fmt(sec){
   return m + ':' + String(s).padStart(2, '0');
 }
 
-function hashSeed(str){
+const AUDIO_EXT = ['mp3','m4a','wav','ogg','aac'];
+
+function titleFromFilename(name){
+  const noExt = name.replace(/\.[^.]+$/, '');
+  const noTimestamp = noExt.replace(/^\d{10,}-/, '');
+  return noTimestamp.replace(/[_-]+/g, ' ').trim() || noExt;
+}
+
+async function fetchTracksFromSupabase(){
+  const res = await fetch(SUPABASE_URL + '/storage/v1/object/list/' + BUCKET, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ prefix: '', limit: 200, sortBy: { column: 'created_at', order: 'asc' } })
+  });
+  if(!res.ok) throw new Error('Supabase list error ' + res.status);
+  const files = await res.json();
+  return files
+    .filter(f => f.name && AUDIO_EXT.includes(f.name.split('.').pop().toLowerCase()))
+    .map(f => ({
+      title: titleFromFilename(f.name),
+      tag: '',
+      cover: '',
+      url: SUPABASE_URL + '/storage/v1/object/public/' + BUCKET + '/' + encodeURIComponent(f.name)
+    }));
+}
   let h = 2166136261;
   for(let i = 0; i < str.length; i++){
     h ^= str.charCodeAt(i);
@@ -370,18 +406,27 @@ function attemptPlay(retriesLeft){
 setInterval(() => sync(false), 1000);
 
 async function init(){
+  document.getElementById('stationName').textContent = STATION_NAME;
+  document.getElementById('stationSubtitle').textContent = STATION_SUBTITLE;
+  document.getElementById('aboutText').textContent = STATION_ABOUT;
   try{
-    const res = await fetch('playlist.json', {cache: 'no-store'});
-    const playlist = await res.json();
-    document.getElementById('stationName').textContent = playlist.stationName || 'РАДИО';
-    document.getElementById('stationSubtitle').textContent = playlist.subtitle || '';
-    document.getElementById('aboutText').textContent = playlist.about || '';
+    if(SUPABASE_URL.indexOf('ТВОЙ-ПРОЕКТ') > -1){
+      titleEl.textContent = 'Supabase не настроен';
+      statusEl.textContent = 'Впиши SUPABASE_URL и SUPABASE_ANON_KEY в код';
+      return;
+    }
     statusEl.textContent = 'Готовим эфир…';
-    const built = await buildSchedule(playlist);
+    const tracks = await fetchTracksFromSupabase();
+    if(tracks.length === 0){
+      titleEl.textContent = 'Треков пока нет';
+      statusEl.textContent = 'Загрузи трек через страницу upload.html';
+      return;
+    }
+    const built = await buildSchedule({tracks});
     schedule = built.list;
     totalDuration = built.total;
     if(schedule.length === 0){
-      titleEl.textContent = 'Плейлист пуст';
+      titleEl.textContent = 'Не удалось прочитать треки';
       return;
     }
     statusEl.textContent = '';
