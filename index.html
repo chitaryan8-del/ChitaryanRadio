@@ -73,7 +73,7 @@
 <body>
 
 <div class="splash" id="splash">
-  <img src="logo.png" alt="" id="splashLogo">
+  <img src="logo.png" alt="">
 </div>
 
 <div class="header">
@@ -123,20 +123,10 @@ try{ Telegram.WebApp.ready(); Telegram.WebApp.expand(); }catch(e){}
 
 (function(){
   const splash = document.getElementById('splash');
-  const splashLogo = document.getElementById('splashLogo');
-  function startSplashTimer(){
-    setTimeout(() => {
-      splash.classList.add('hide');
-      setTimeout(() => { splash.style.display = 'none'; }, 600);
-    }, 2000);
-  }
-  if(splashLogo.complete && splashLogo.naturalWidth > 0){
-    startSplashTimer();
-  } else {
-    splashLogo.addEventListener('load', startSplashTimer, {once:true});
-    splashLogo.addEventListener('error', startSplashTimer, {once:true});
-    setTimeout(startSplashTimer, 4000);
-  }
+  setTimeout(() => {
+    splash.classList.add('hide');
+    setTimeout(() => { splash.style.display = 'none'; }, 600);
+  }, 2000);
 })();
 
 (function(){
