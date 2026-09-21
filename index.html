@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Радио</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root{
+    --bg: #0b0b0d;
+    --text: #ffffff;
+    --hint: #8a8a92;
+    --accent: #ffffff;
+    --card: #17171a;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    min-height:100%; padding-bottom:70px;}
+  .header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 6px;gap:12px;}
+  .brand{display:flex;align-items:center;gap:10px;min-width:0;}
+  .logo-badge{background:#fff;border-radius:12px;padding:5px 10px;display:none;flex-shrink:0;}
+  .logo-badge.loaded{display:flex;}
+  .logo-badge img{height:32px;width:auto;display:block;}
+  .station{font-size:22px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .station.hidden-by-logo{display:none;}
+  .badge{border:1px solid rgba(255,255,255,.5);border-radius:20px;padding:6px 14px;
+    font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;}
+  .badge .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#ff4d4d;margin-right:6px;
+    animation:pulse 1.4s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+  .subtitle{padding:0 20px 18px;color:var(--hint);font-size:12px;letter-spacing:2px;text-transform:uppercase;}
+
+  .cover-wrap{position:relative;width:100%;aspect-ratio:1/1;overflow:hidden;background:#1c1c22;}
+  .cover-img{width:100%;height:100%;object-fit:cover;display:block;}
+  .cover-fallback{width:100%;height:100%;background:linear-gradient(160deg,#3a2f6b,#161622 60%);}
+  .cover-text{position:absolute;left:0;right:0;top:0;padding:18px 20px;
+    background:linear-gradient(180deg,rgba(0,0,0,.65) 0%,rgba(0,0,0,.15) 70%,transparent 100%);}
+  .tag{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.7);margin-bottom:6px;}
+  .track-title{font-size:30px;font-weight:800;line-height:1.05;letter-spacing:-.5px;
+    text-transform:uppercase;max-width:88%;}
+
+  .next-row{display:flex;align-items:center;justify-content:space-between;
+    padding:18px 20px;border-bottom:1px solid rgba(255,255,255,.08);}
+  .next-label{color:var(--hint);font-size:12px;letter-spacing:1.5px;text-transform:uppercase;}
+  .next-timer{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums;}
+
+  .controls{display:flex;flex-direction:column;align-items:center;padding:28px 20px 8px;gap:14px;}
+  .playbtn{width:74px;height:74px;border-radius:50%;border:none;background:#ffffff;color:#0b0b0d;
+    font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .playbtn:active{transform:scale(.96);}
+  .vol{width:180px;}
+  .status{color:var(--hint);font-size:12px;min-height:16px;}
+
+  .tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;gap:44px;
+    background:var(--bg);border-top:1px solid rgba(255,255,255,.08);padding:14px 0 20px;}
+  .tab{color:var(--hint);font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+    background:none;border:none;cursor:pointer;padding-bottom:6px;border-bottom:2px solid transparent;}
+  .tab.active{color:#fff;border-bottom-color:#fff;}
+
+  .info-panel{display:none;padding:20px;color:var(--hint);font-size:14px;line-height:1.5;}
+  .info-panel.active{display:block;}
+  .player-view.hidden{display:none;}
+
+  .splash{position:fixed;inset:0;background:#0b0b0d;z-index:9999;
+    display:flex;align-items:center;justify-content:center;
+    transition:opacity .5s ease;}
+  .splash img{width:220px;max-width:70vw;animation:splashBlink 0.9s ease-in-out infinite;}
+  @keyframes splashBlink{0%,100%{opacity:1}50%{opacity:.25}}
+  .splash.hide{opacity:0;pointer-events:none;}
+</style>
+</head>
+<body>
+
+<div class="splash" id="splash">
+  <img src="logo.png" alt="">
+</div>
+
+<div class="header">
+  <div class="brand">
+    <div class="logo-badge" id="logoBadge">
+      <img id="logo" src="logo.png">
+    </div>
+    <div class="station" id="stationName">РАДИО</div>
+  </div>
+  <div class="badge"><span class="dot"></span>В эфире</div>
+</div>
+<div class="subtitle" id="stationSubtitle"></div>
+
+<div class="player-view" id="playerView">
+  <div class="cover-wrap">
+    <div class="cover-fallback" id="coverFallback"></div>
+    <img class="cover-img" id="coverImg" style="display:none">
+    <div class="cover-text">
+      <div class="tag" id="trackTag"></div>
+      <div class="track-title" id="trackTitle">Загрузка…</div>
+    </div>
+  </div>
+
+  <div class="next-row">
+    <div class="next-label">Следующий трек:<br><span id="nextTitle" style="color:#fff"></span></div>
+    <div class="next-timer" id="nextTimer">0:00</div>
+  </div>
+
+  <div class="controls">
+    <button class="playbtn" id="playBtn">▶</button>
+    <input type="range" class="vol" id="vol" min="0" max="1" step="0.01" value="1">
+    <div class="status" id="status"></div>
+  </div>
+</div>
+
+<div class="info-panel" id="infoPanel">
+  <p id="aboutText">Информация о станции появится здесь.</p>
+</div>
+
+<div class="tabbar">
+  <button class="tab active" id="tabAir">Эфир</button>
+  <button class="tab" id="tabInfo">Инфо</button>
+</div>
+
+<script>
+try{ Telegram.WebApp.ready(); Telegram.WebApp.expand(); }catch(e){}
+
+(function(){
+  const splash = document.getElementById('splash');
+  setTimeout(() => {
+    splash.classList.add('hide');
+    setTimeout(() => { splash.style.display = 'none'; }, 600);
+  }, 2000);
+})();
+
+(function(){
+  const logo = document.getElementById('logo');
+  const badge = document.getElementById('logoBadge');
+  const stationName = document.getElementById('stationName');
+  logo.addEventListener('load', () => {
+    badge.classList.add('loaded');
+    stationName.classList.add('hidden-by-logo');
+  });
+  logo.addEventListener('error', () => {
+    badge.classList.remove('loaded');
+    stationName.classList.remove('hidden-by-logo');
+  });
+})();
+
+const EPOCH = new Date('2026-01-01T00:00:00Z').getTime();
+
+const audio = new Audio();
+audio.preload = 'auto';
+const playBtn = document.getElementById('playBtn');
+const titleEl = document.getElementById('trackTitle');
+const tagEl = document.getElementById('trackTag');
+const nextTitleEl = document.getElementById('nextTitle');
+const nextTimerEl = document.getElementById('nextTimer');
+const statusEl = document.getElementById('status');
+const coverImg = document.getElementById('coverImg');
+const coverFallback = document.getElementById('coverFallback');
+document.getElementById('vol').addEventListener('input', e => audio.volume = e.target.value);
+
+document.getElementById('tabAir').addEventListener('click', () => switchTab('air'));
+document.getElementById('tabInfo').addEventListener('click', () => switchTab('info'));
+function switchTab(which){
+  document.getElementById('playerView').classList.toggle('hidden', which !== 'air');
+  document.getElementById('infoPanel').classList.toggle('active', which === 'info');
+  document.getElementById('tabAir').classList.toggle('active', which === 'air');
+  document.getElementById('tabInfo').classList.toggle('active', which === 'info');
+}
+
+let schedule = [];
+let totalDuration = 0;
+let playing = false;
+let currentIndex = -1;
+
+async function getDuration(url){
+  return new Promise((resolve) => {
+    const a = new Audio();
+    a.preload = 'metadata';
+    a.src = url;
+    a.addEventListener('loadedmetadata', () => resolve(a.duration || 0));
+    a.addEventListener('error', () => resolve(0));
+  });
+}
+
+async function buildSchedule(playlist){
+  let t = 0;
+  const list = [];
+  for(const track of playlist.tracks){
+    const dur = await getDuration(track.url);
+    if(dur > 0){
+      list.push({
+        title: track.title, url: track.url, tag: track.tag || '',
+        cover: track.cover || '', start: t, end: t + dur, duration: dur
+      });
+      t += dur;
+    }
+  }
+  return {list, total: t};
+}
+
+function findCurrent(elapsed){
+  for(let i = 0; i < schedule.length; i++){
+    if(elapsed >= schedule[i].start && elapsed < schedule[i].end) return i;
+  }
+  return 0;
+}
+
+function fmt(sec){
+  sec = Math.max(0, Math.round(sec));
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return m + ':' + String(s).padStart(2, '0');
+}
+
+function hashHue(str){
+  let h = 0;
+  for(let i = 0; i < str.length; i++){
+    h = (h * 31 + str.charCodeAt(i)) % 360;
+  }
+  return h;
+}
+
+function applyCover(track){
+  if(track.cover){
+    coverImg.src = track.cover;
+    coverImg.style.display = 'block';
+    coverFallback.style.display = 'none';
+  } else {
+    coverImg.style.display = 'none';
+    coverFallback.style.display = 'block';
+    const hue = hashHue(track.title || 'x');
+    const hue2 = (hue + 45) % 360;
+    coverFallback.style.background =
+      'linear-gradient(160deg, hsl(' + hue + ',55%,32%), hsl(' + hue2 + ',45%,14%) 65%)';
+  }
+}
+
+function sync(forceLoad){
+  if(schedule.length === 0 || totalDuration === 0) return;
+  const now = Date.now();
+  const elapsed = ((now - EPOCH) / 1000) % totalDuration;
+  const idx = findCurrent(elapsed);
+  const track = schedule[idx];
+  const offsetInTrack = elapsed - track.start;
+  const nextTrack = schedule[(idx + 1) % schedule.length];
+
+  nextTitleEl.textContent = nextTrack ? nextTrack.title : '';
+  nextTimerEl.textContent = fmt(track.end - elapsed);
+
+  if(idx !== currentIndex || forceLoad){
+    currentIndex = idx;
+    audio.src = track.url;
+    titleEl.textContent = track.title;
+    tagEl.textContent = track.tag;
+    applyCover(track);
+    if(playing){
+      audio.currentTime = offsetInTrack;
+      audio.play().catch(()=>{});
+    }
+  } else if(playing && Math.abs(audio.currentTime - offsetInTrack) > 1.5){
+    audio.currentTime = offsetInTrack;
+  }
+}
+
+playBtn.addEventListener('click', () => {
+  if(!playing){
+    sync(true);
+    audio.play().then(() => {
+      playing = true;
+      playBtn.textContent = '❚❚';
+    }).catch(() => { statusEl.textContent = 'Не удалось начать воспроизведение'; });
+  } else {
+    audio.pause();
+    playing = false;
+    playBtn.textContent = '▶';
+  }
+});
+
+setInterval(() => sync(false), 1000);
+
+async function init(){
+  try{
+    const res = await fetch('playlist.json', {cache: 'no-store'});
+    const playlist = await res.json();
+    document.getElementById('stationName').textContent = playlist.stationName || 'РАДИО';
+    document.getElementById('stationSubtitle').textContent = playlist.subtitle || '';
+    document.getElementById('aboutText').textContent = playlist.about || '';
+    statusEl.textContent = 'Готовим эфир…';
+    const built = await buildSchedule(playlist);
+    schedule = built.list;
+    totalDuration = built.total;
+    if(schedule.length === 0){
+      titleEl.textContent = 'Плейлист пуст';
+      return;
+    }
+    statusEl.textContent = '';
+    sync(true);
+  }catch(e){
+    titleEl.textContent = 'Не удалось загрузить плейлист';
+    statusEl.textContent = String(e.message || e);
+  }
+}
+init();
+</script>
+</body>
+</html>
