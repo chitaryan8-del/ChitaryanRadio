@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Загрузить трек</title>
+<style>
+  :root{ --bg:#0b0b0d; --text:#fff; --hint:#8a8a92; }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    min-height:100%;}
+  .wrap{max-width:420px;margin:0 auto;padding:28px 20px 40px;text-align:center;}
+  img.logo{width:200px;max-width:70vw;margin-bottom:18px;}
+  h1{font-size:18px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin:0 0 4px;}
+  p.sub{color:var(--hint);font-size:13px;margin:0 0 28px;}
+  .dropzone{border:2px dashed rgba(255,255,255,.25);border-radius:16px;padding:32px 16px;
+    cursor:pointer;margin-bottom:18px;}
+  .dropzone input{display:none;}
+  .dropzone .label{font-size:15px;font-weight:700;}
+  .dropzone .hint{color:var(--hint);font-size:12px;margin-top:6px;}
+  .fileinfo{font-size:13px;color:var(--hint);margin-bottom:14px;word-break:break-all;min-height:18px;}
+  .bar{width:100%;height:8px;background:#1c1c22;border-radius:6px;overflow:hidden;margin-bottom:14px;display:none;}
+  .bar.show{display:block;}
+  .bar-fill{height:100%;width:0%;background:#ffffff;transition:width .15s ease;}
+  button.upload{width:100%;padding:14px;border:none;border-radius:12px;background:#fff;color:#0b0b0d;
+    font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;}
+  button.upload:disabled{opacity:.4;}
+  .status{margin-top:16px;font-size:13px;color:var(--hint);min-height:18px;}
+  .status.ok{color:#6ee787;}
+  .status.err{color:#ff6b6b;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <img class="logo" src="logo.png" alt="">
+  <h1>Загрузить трек</h1>
+  <p class="sub">Файл появится в эфире автоматически</p>
+
+  <label class="dropzone" id="dropzone">
+    <div class="label">Выбрать mp3</div>
+    <div class="hint">Тап — откроется выбор файла</div>
+    <input type="file" id="fileInput" accept="audio/*">
+  </label>
+
+  <div class="fileinfo" id="fileInfo"></div>
+  <div class="bar" id="bar"><div class="bar-fill" id="barFill"></div></div>
+  <button class="upload" id="uploadBtn" disabled>Загрузить</button>
+  <div class="status" id="status"></div>
+</div>
+
+<script>
+// ЗАПОЛНИ ЭТИ ДВЕ СТРОКИ ДАННЫМИ ИЗ SUPABASE (Project Settings → API)
+const SUPABASE_URL = 'https://czqoftvkccivkinttswl.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6cW9mdHZrY2NpdmtpbnR0c3dsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk5ODQwNDQsImV4cCI6MjEwNTU2MDA0NH0.A1fSOyYv_T8c1tLFncmX-bL90NIbZYDhnL_JvqcGlNM';
+const BUCKET = 'tracks';
+
+const fileInput = document.getElementById('fileInput');
+const fileInfo = document.getElementById('fileInfo');
+const uploadBtn = document.getElementById('uploadBtn');
+const statusEl = document.getElementById('status');
+const bar = document.getElementById('bar');
+const barFill = document.getElementById('barFill');
+
+let selectedFile = null;
+
+fileInput.addEventListener('change', () => {
+  if(fileInput.files && fileInput.files[0]){
+    selectedFile = fileInput.files[0];
+    fileInfo.textContent = selectedFile.name + ' (' + (selectedFile.size / 1024 / 1024).toFixed(1) + ' МБ)';
+    uploadBtn.disabled = false;
+    statusEl.textContent = '';
+    statusEl.className = 'status';
+  }
+});
+
+function sanitizeName(name){
+  const dot = name.lastIndexOf('.');
+  const base = dot > -1 ? name.slice(0, dot) : name;
+  const ext = dot > -1 ? name.slice(dot) : '.mp3';
+  const clean = base.replace(/[^a-zA-Zа-яА-Я0-9 _-]/g, '').trim().replace(/\s+/g, '_');
+  return Date.now() + '-' + (clean || 'track') + ext;
+}
+
+uploadBtn.addEventListener('click', () => {
+  if(!selectedFile) return;
+  if(SUPABASE_URL.indexOf('ТВОЙ-ПРОЕКТ') > -1){
+    statusEl.textContent = 'Сначала впиши данные Supabase в код страницы';
+    statusEl.className = 'status err';
+    return;
+  }
+  uploadBtn.disabled = true;
+  statusEl.textContent = 'Загружаем…';
+  statusEl.className = 'status';
+  bar.classList.add('show');
+
+  const filename = sanitizeName(selectedFile.name);
+  const xhr = new XMLHttpRequest();
+  xhr.open('PUT', SUPABASE_URL + '/storage/v1/object/' + BUCKET + '/' + encodeURIComponent(filename));
+  xhr.setRequestHeader('apikey', SUPABASE_ANON_KEY);
+  xhr.setRequestHeader('Authorization', 'Bearer ' + SUPABASE_ANON_KEY);
+  xhr.setRequestHeader('Content-Type', selectedFile.type || 'audio/mpeg');
+  xhr.setRequestHeader('x-upsert', 'true');
+
+  xhr.upload.addEventListener('progress', (e) => {
+    if(e.lengthComputable){
+      const pct = Math.round((e.loaded / e.total) * 100);
+      barFill.style.width = pct + '%';
+    }
+  });
+
+  xhr.onload = () => {
+    if(xhr.status >= 200 && xhr.status < 300){
+      statusEl.textContent = 'Готово! Трек уже в эфире 🎧';
+      statusEl.className = 'status ok';
+      barFill.style.width = '100%';
+      uploadBtn.disabled = false;
+      fileInput.value = '';
+      selectedFile = null;
+      fileInfo.textContent = '';
+    } else {
+      statusEl.textContent = 'Ошибка загрузки (' + xhr.status + ')';
+      statusEl.className = 'status err';
+      uploadBtn.disabled = false;
+    }
+  };
+  xhr.onerror = () => {
+    statusEl.textContent = 'Не удалось загрузить — проверь интернет';
+    statusEl.className = 'status err';
+    uploadBtn.disabled = false;
+  };
+  xhr.send(selectedFile);
+});
+</script>
+</body>
+</html>
