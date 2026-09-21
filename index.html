@@ -176,8 +176,11 @@ async function getDuration(url){
     const a = new Audio();
     a.preload = 'metadata';
     a.src = url;
-    a.addEventListener('loadedmetadata', () => resolve(a.duration || 0));
-    a.addEventListener('error', () => resolve(0));
+    let done = false;
+    const finish = (val) => { if(!done){ done = true; resolve(val); } };
+    a.addEventListener('loadedmetadata', () => finish(a.duration || 0));
+    a.addEventListener('error', () => finish(0));
+    setTimeout(() => finish(0), 8000);
   });
 }
 
