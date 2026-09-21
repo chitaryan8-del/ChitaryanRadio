@@ -264,6 +264,8 @@ async function fetchTracksFromSupabase(){
       url: SUPABASE_URL + '/storage/v1/object/public/' + BUCKET + '/' + encodeURIComponent(f.name)
     }));
 }
+
+function hashSeed(str){
   let h = 2166136261;
   for(let i = 0; i < str.length; i++){
     h ^= str.charCodeAt(i);
