@@ -1,8 +1,8 @@
 {
   "stationName": "CHITARYAN RADIO",
-  "subtitle": "STREET SELECT",
+  "subtitle": "",
   "about": "Здесь можно написать пару строк о твоей радиостанции — кто делает, что играет, как часто обновляется плейлист.",
   "tracks": [
-    { "title": "La Clinique - La Playa", "tag": "", "cover": "", "duration": 293, "url": "https://archive.org/download/la-clinique-la-playa/La%20Clinique%20-%20La%20playa%20.mp3" }
+    { "title": "La Clinique - La Playa", "tag": "", "cover": "", "duration": 293, "url": "audio/la-clinique-la-playa.mp3" }
   ]
 }
