@@ -3,7 +3,7 @@
   "subtitle": "STREET SELECT",
   "about": "Здесь можно написать пару строк о твоей радиостанции — кто делает, что играет, как часто обновляется плейлист.",
   "tracks": [
-    { "title": "Название трека 1", "tag": "Raw Kitchen", "cover": "", "url": "https://example.com/track1.mp3" },
+    { "title": "La Clinne", "tag": "ChitaryanRadio", "cover": "", "url": "https://example.com/track1.mp3" },
     { "title": "Название трека 2", "tag": "", "cover": "", "url": "https://example.com/track2.mp3" },
     { "title": "Название трека 3", "tag": "", "cover": "", "url": "https://example.com/track3.mp3" }
   ]
