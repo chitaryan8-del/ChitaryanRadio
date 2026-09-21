@@ -180,7 +180,7 @@ async function getDuration(url){
     const finish = (val) => { if(!done){ done = true; resolve(val); } };
     a.addEventListener('loadedmetadata', () => finish(a.duration || 0));
     a.addEventListener('error', () => finish(0));
-    setTimeout(() => finish(0), 8000);
+    setTimeout(() => finish(0), 20000);
   });
 }
 
@@ -188,7 +188,10 @@ async function buildSchedule(playlist){
   let t = 0;
   const list = [];
   for(const track of playlist.tracks){
-    const dur = await getDuration(track.url);
+    let dur = Number(track.duration) || 0;
+    if(!dur){
+      dur = await getDuration(track.url);
+    }
     if(dur > 0){
       list.push({
         title: track.title, url: track.url, tag: track.tag || '',
