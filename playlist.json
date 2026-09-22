@@ -1,7 +1,7 @@
 {
   "stationName": "CHITARYAN RADIO",
   "subtitle": "",
-  "about": "Здесь можно написать пару строк о твоей радиостанции — кто делает, что играет, как часто обновляется плейлист.",
+  "about": "Сделал CHITARYAN. Играет Underground/Old School Hip-Hop,Techno и музыка своих. Мои треки, треки друзей и то, что хочется слушать. Новая ротация каждую неделю.",
   "tracks": [
     { "title": "La Clinique - La Playa", "tag": "", "cover": "", "duration": 293, "url": "audio/la-clinique-la-playa.mp3" }
   ]
