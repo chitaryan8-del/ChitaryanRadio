@@ -16,7 +16,13 @@
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-    min-height:100%; padding-bottom:70px;}
+    min-height:100%; padding-bottom:70px; position:relative; overflow-x:hidden;}
+  .glow{position:fixed;top:-20%;left:50%;transform:translateX(-50%);width:140vw;height:60vh;
+    background:radial-gradient(ellipse at center, var(--accent, #7c5cff) 0%, transparent 65%);
+    opacity:.22;filter:blur(40px);pointer-events:none;z-index:0;transition:background 1.2s ease;}
+  .header, .subtitle, .player-view, .info-panel, .tabbar{position:relative;z-index:1;}
+  body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:5;opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
   .header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 6px;gap:12px;}
   .brand{display:flex;align-items:center;gap:10px;min-width:0;}
   .logo-badge{padding:0;display:none;flex-shrink:0;}
@@ -25,30 +31,49 @@
   .station{font-size:22px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .station.hidden-by-logo{display:none;}
   .badge{border:1px solid rgba(255,255,255,.5);border-radius:20px;padding:6px 14px;
-    font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;}
-  .badge .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#ff4d4d;margin-right:6px;
+    font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;
+    display:flex;align-items:center;gap:8px;}
+  .badge .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#ff4d4d;margin-right:2px;
     animation:pulse 1.4s ease-in-out infinite;}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+  .eq{display:none;align-items:flex-end;gap:2px;height:12px;}
+  .eq.playing{display:flex;}
+  .eq span{width:2px;background:#fff;border-radius:1px;animation:eqBounce 0.9s ease-in-out infinite;}
+  .eq span:nth-child(1){animation-delay:-0.6s;}
+  .eq span:nth-child(2){animation-delay:-0.3s;}
+  .eq span:nth-child(3){animation-delay:0s;}
+  @keyframes eqBounce{0%,100%{height:3px;}50%{height:12px;}}
   .subtitle{padding:0 20px 18px;color:var(--hint);font-size:12px;letter-spacing:2px;text-transform:uppercase;}
 
   .cover-wrap{position:relative;width:100%;aspect-ratio:1/1;overflow:hidden;background:#1c1c22;}
-  .cover-img{width:100%;height:100%;object-fit:cover;display:block;}
-  .cover-fallback{width:100%;height:100%;background:linear-gradient(160deg,#3a2f6b,#161622 60%);}
+  .cover-img{width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .5s ease;}
+  .cover-img.shown{opacity:1;}
+  .cover-fallback{width:100%;height:100%;background:linear-gradient(160deg,#3a2f6b,#161622 60%);opacity:0;transition:opacity .5s ease;}
+  .cover-fallback.shown{opacity:1;}
   .cover-text{position:absolute;left:0;right:0;top:0;padding:18px 20px;
     background:linear-gradient(180deg,rgba(0,0,0,.65) 0%,rgba(0,0,0,.15) 70%,transparent 100%);}
   .tag{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.7);margin-bottom:6px;}
   .track-title{font-size:30px;font-weight:800;line-height:1.05;letter-spacing:-.5px;
     text-transform:uppercase;max-width:88%;}
+  .track-title.animate{animation:titleIn .5s ease;}
+  @keyframes titleIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
 
   .next-row{display:flex;align-items:center;justify-content:space-between;
-    padding:18px 20px;border-bottom:1px solid rgba(255,255,255,.08);}
+    padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.08);}
+  .progress-track{height:3px;background:rgba(255,255,255,.1);margin:0 20px;border-radius:2px;overflow:hidden;}
+  .progress-fill{height:100%;width:0%;background:var(--accent, #fff);transition:width 1s linear, background 1.2s ease;
+    box-shadow:0 0 8px 0 var(--accent, #fff);}
   .next-label{color:var(--hint);font-size:12px;letter-spacing:1.5px;text-transform:uppercase;}
   .next-timer{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums;}
 
   .controls{display:flex;flex-direction:column;align-items:center;padding:28px 20px 8px;gap:14px;}
   .playbtn{width:74px;height:74px;border-radius:50%;border:none;background:#ffffff;color:#0b0b0d;
-    font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
-  .playbtn:active{transform:scale(.96);}
+    font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    transition:transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .15s ease;
+    box-shadow:0 0 0 0 rgba(255,255,255,0);}
+  .playbtn:active{transform:scale(.88);}
+  .playbtn.pulse{animation:btnPulse .5s ease-out;}
+  @keyframes btnPulse{0%{box-shadow:0 0 0 0 rgba(255,255,255,.4);}100%{box-shadow:0 0 0 22px rgba(255,255,255,0);}}
   .vol{width:180px;}
   .status{color:var(--hint);font-size:12px;min-height:16px;}
 
@@ -71,6 +96,7 @@
 </style>
 </head>
 <body>
+<div class="glow" id="glow"></div>
 
 <div class="splash" id="splash">
   <img src="logo.png" alt="" id="splashLogo">
@@ -83,7 +109,7 @@
     </div>
     <div class="station" id="stationName">РАДИО</div>
   </div>
-  <div class="badge"><span class="dot"></span>В эфире</div>
+  <div class="badge"><span class="dot"></span>В эфире<span class="eq" id="eq"><span></span><span></span><span></span></span></div>
 </div>
 <div class="subtitle" id="stationSubtitle"></div>
 
@@ -97,6 +123,7 @@
     </div>
   </div>
 
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
   <div class="next-row">
     <div class="next-label">Следующий трек:<br><span id="nextTitle" style="color:#fff"></span></div>
     <div class="next-timer" id="nextTimer">0:00</div>
@@ -170,6 +197,8 @@ const titleEl = document.getElementById('trackTitle');
 const tagEl = document.getElementById('trackTag');
 const nextTitleEl = document.getElementById('nextTitle');
 const nextTimerEl = document.getElementById('nextTimer');
+const progressFill = document.getElementById('progressFill');
+const eqEl = document.getElementById('eq');
 const statusEl = document.getElementById('status');
 const coverImg = document.getElementById('coverImg');
 const coverFallback = document.getElementById('coverFallback');
@@ -198,18 +227,40 @@ async function getDuration(url){
     const finish = (val) => { if(!done){ done = true; resolve(val); } };
     a.addEventListener('loadedmetadata', () => finish(a.duration || 0));
     a.addEventListener('error', () => finish(0));
-    setTimeout(() => finish(0), 15000);
+    setTimeout(() => finish(0), 8000);
   });
 }
 
+const CACHE_KEY = 'radioScheduleCache';
+
 async function buildSchedule(playlist){
+  const cacheKey = playlist.tracks.map(t => t.url).join('|');
+  let cachedDurations = null;
+  try{
+    const raw = localStorage.getItem(CACHE_KEY);
+    if(raw){
+      const cache = JSON.parse(raw);
+      if(cache.key === cacheKey && Array.isArray(cache.durations) && cache.durations.length === playlist.tracks.length){
+        cachedDurations = cache.durations;
+      }
+    }
+  }catch(e){}
+
+  let durations;
+  if(cachedDurations){
+    durations = cachedDurations;
+  } else {
+    durations = await Promise.all(playlist.tracks.map(track => {
+      const dur = Number(track.duration) || 0;
+      return dur ? Promise.resolve(dur) : getDuration(track.url);
+    }));
+    try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ key: cacheKey, durations })); }catch(e){}
+  }
+
   let t = 0;
   const list = [];
-  for(const track of playlist.tracks){
-    let dur = Number(track.duration) || 0;
-    if(!dur){
-      dur = await getDuration(track.url);
-    }
+  playlist.tracks.forEach((track, i) => {
+    const dur = durations[i];
     if(dur > 0){
       list.push({
         title: track.title, url: track.url, tag: track.tag || '',
@@ -217,7 +268,7 @@ async function buildSchedule(playlist){
       });
       t += dur;
     }
-  }
+  });
   return {list, total: t};
 }
 
@@ -334,7 +385,15 @@ function buildCoverSVG(title){
 }
 
 function applyCover(track){
+  const hue = hashSeed(track.title || 'x') % 360;
+  document.getElementById('glow').style.setProperty('--accent', 'hsl(' + hue + ',75%,55%)');
+  document.documentElement.style.setProperty('--accent', 'hsl(' + hue + ',75%,55%)');
+
+  coverImg.classList.remove('shown');
+  coverFallback.classList.remove('shown');
+
   if(track.cover){
+    coverImg.onload = () => coverImg.classList.add('shown');
     coverImg.src = track.cover;
     coverImg.style.display = 'block';
     coverFallback.style.display = 'none';
@@ -343,6 +402,7 @@ function applyCover(track){
     coverFallback.style.display = 'block';
     const svg = buildCoverSVG(track.title || 'x');
     coverFallback.style.background = 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '") center/cover no-repeat';
+    requestAnimationFrame(() => coverFallback.classList.add('shown'));
   }
 }
 
@@ -357,11 +417,15 @@ function sync(forceLoad){
 
   nextTitleEl.textContent = nextTrack ? nextTrack.title : '';
   nextTimerEl.textContent = fmt(track.end - elapsed);
+  progressFill.style.width = Math.min(100, Math.max(0, (offsetInTrack / track.duration) * 100)) + '%';
 
   if(idx !== currentIndex || forceLoad){
     currentIndex = idx;
     audio.src = track.url;
     titleEl.textContent = track.title;
+    titleEl.classList.remove('animate');
+    void titleEl.offsetWidth;
+    titleEl.classList.add('animate');
     tagEl.textContent = track.tag;
     applyCover(track);
     if(playing){
@@ -375,7 +439,7 @@ function sync(forceLoad){
 
 playBtn.addEventListener('click', () => {
   if(!playing){
-    sync(true);
+    sync(false);
     if(schedule.length > 0 && currentIndex >= 0){
       const now = Date.now();
       const elapsed = ((now - EPOCH) / 1000) % totalDuration;
@@ -387,6 +451,7 @@ playBtn.addEventListener('click', () => {
     audio.pause();
     playing = false;
     playBtn.textContent = '▶';
+    eqEl.classList.remove('playing');
   }
 });
 
@@ -394,6 +459,9 @@ function attemptPlay(retriesLeft){
   audio.play().then(() => {
     playing = true;
     playBtn.textContent = '❚❚';
+    playBtn.classList.add('pulse');
+    setTimeout(() => playBtn.classList.remove('pulse'), 500);
+    eqEl.classList.add('playing');
     statusEl.textContent = '';
   }).catch(() => {
     if(retriesLeft > 0){
