@@ -121,7 +121,6 @@
   .playbtn:active{transform:translateY(4px);box-shadow:0 2px 0 0 #060607, 0 4px 10px -4px rgba(0,0,0,.6);}
   .playbtn.pulse{animation:btnPulse .5s ease-out;}
   @keyframes btnPulse{0%{box-shadow:0 6px 0 0 #060607, 0 0 0 0 rgba(224,41,63,.45);}100%{box-shadow:0 6px 0 0 #060607, 0 0 0 20px rgba(224,41,63,0);}}
-  .vol{width:170px;accent-color:var(--accent);}
   .status{color:var(--hint);font-family:var(--mono);font-size:11px;min-height:16px;letter-spacing:.5px;}
 
   .tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;gap:8px;
@@ -137,6 +136,12 @@
   .info-panel{display:none;padding:22px 20px;color:var(--hint);font-size:14px;line-height:1.6;}
   .info-panel.active{display:block;}
   .player-view.hidden{display:none;}
+
+  .beats-link{display:flex;align-items:center;justify-content:center;gap:8px;
+    margin-top:20px;padding:14px 18px;border-radius:12px;text-decoration:none;
+    background:rgba(224,41,63,.1);border:1px solid rgba(224,41,63,.4);
+    color:#fff;font-weight:700;font-size:14px;letter-spacing:.3px;}
+  .beats-link:active{background:rgba(224,41,63,.18);}
 
   .splash{position:fixed;inset:0;background:var(--bg);z-index:9999;
     display:flex;align-items:center;justify-content:center;
@@ -207,13 +212,13 @@
 
   <div class="controls">
     <button class="playbtn" id="playBtn">▶</button>
-    <input type="range" class="vol" id="vol" min="0" max="1" step="0.01" value="1">
     <div class="status" id="status"></div>
   </div>
 </div>
 
 <div class="info-panel" id="infoPanel">
   <p id="aboutText">Информация о станции появится здесь.</p>
+  <a class="beats-link" id="beatsLink" href="#" target="_blank" rel="noopener"></a>
 </div>
 
 <div class="tabbar">
@@ -224,13 +229,15 @@
 <script>
 try{ Telegram.WebApp.ready(); Telegram.WebApp.expand(); }catch(e){}
 
-// ЗАПОЛРОКНИ ЭТИ ДВЕ СТИ ДАННЫМИ ИЗ SUPABASE (Project Settings → API) — те же, что в upload.html
+// ЗАПОЛНИ ЭТИ ДВЕ СТРОКИ ДАННЫМИ ИЗ SUPABASE (Project Settings → API) — те же, что в upload.html
 const SUPABASE_URL = 'https://czqoftvkccivkinttswl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6cW9mdHZrY2NpdmtpbnR0c3dsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk5ODQwNDQsImV4cCI6MjEwNTU2MDA0NH0.A1fSOyYv_T8c1tLFncmX-bL90NIbZYDhnL_JvqcGlNM';
 const BUCKET = 'tracks';
 const STATION_NAME = 'CHITARYAN RADIO';
-const STATION_SUBTITLE = 'UNDERGROUND TRANSMISSION · 24/7';
+const STATION_SUBTITLE = 'UNDERGROUND LIFE · 24/7';
 const STATION_ABOUT = 'Сделал CHITARYAN. Underground/old school hip-hop, techno и музыка своих. Мои треки, треки друзей и то, что хочется слушать. Новая ротация каждую неделю.';
+const BEATS_LINK_URL = 'https://t.me/ChitaryanBeats';
+const BEATS_LINK_LABEL = 'Мой канал с битами и прочим';
 
 (function(){
   const splash = document.getElementById('splash');
@@ -281,8 +288,6 @@ const coverFallback = document.getElementById('coverFallback');
 const trackCounterEl = document.getElementById('trackCounter');
 const elapsedTimeEl = document.getElementById('elapsedTime');
 const totalTimeEl = document.getElementById('totalTime');
-document.getElementById('vol').addEventListener('input', e => audio.volume = e.target.value);
-
 document.getElementById('tabAir').addEventListener('click', () => switchTab('air'));
 document.getElementById('tabInfo').addEventListener('click', () => switchTab('info'));
 function switchTab(which){
@@ -591,6 +596,9 @@ async function init(){
   document.getElementById('stationName').textContent = STATION_NAME;
   document.getElementById('stationSubtitle').textContent = STATION_SUBTITLE;
   document.getElementById('aboutText').textContent = STATION_ABOUT;
+  const beatsLink = document.getElementById('beatsLink');
+  beatsLink.href = BEATS_LINK_URL;
+  beatsLink.textContent = BEATS_LINK_LABEL;
   try{
     if(SUPABASE_URL.indexOf('ТВОЙ-ПРОЕКТ') > -1){
       titleEl.textContent = 'Supabase не настроен';
