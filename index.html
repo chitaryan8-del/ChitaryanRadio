@@ -519,7 +519,39 @@ function applyCover(track){
     coverFallback.style.background = 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '") center/cover no-repeat';
     requestAnimationFrame(() => coverFallback.classList.add('shown'));
   }
+
+  updateMediaSession(track, coverUrl);
 }
+
+function updateMediaSession(track, coverUrl){
+  if(!('mediaSession' in navigator)) return;
+  try{
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: track.title || 'CHITARYAN RADIO',
+      artist: STATION_NAME,
+      album: 'Live',
+      artwork: coverUrl ? [
+        { src: coverUrl, sizes: '96x96', type: 'image/jpeg' },
+        { src: coverUrl, sizes: '256x256', type: 'image/jpeg' },
+        { src: coverUrl, sizes: '512x512', type: 'image/jpeg' }
+      ] : []
+    });
+  }catch(e){}
+}
+
+function setupMediaSessionHandlers(){
+  if(!('mediaSession' in navigator)) return;
+  try{
+    navigator.mediaSession.setActionHandler('play', () => { playBtn.click(); });
+    navigator.mediaSession.setActionHandler('pause', () => { playBtn.click(); });
+    navigator.mediaSession.setActionHandler('seekto', null);
+    navigator.mediaSession.setActionHandler('seekbackward', null);
+    navigator.mediaSession.setActionHandler('seekforward', null);
+    navigator.mediaSession.setActionHandler('previoustrack', null);
+    navigator.mediaSession.setActionHandler('nexttrack', null);
+  }catch(e){}
+}
+setupMediaSessionHandlers();
 
 function sync(forceLoad){
   if(schedule.length === 0 || totalDuration === 0) return;
@@ -570,6 +602,9 @@ playBtn.addEventListener('click', () => {
     playing = false;
     playBtn.textContent = '▶';
     eqEl.classList.remove('playing');
+    if('mediaSession' in navigator){
+      try{ navigator.mediaSession.playbackState = 'paused'; }catch(e){}
+    }
   }
 });
 
@@ -581,6 +616,9 @@ function attemptPlay(retriesLeft){
     setTimeout(() => playBtn.classList.remove('pulse'), 500);
     eqEl.classList.add('playing');
     statusEl.textContent = '';
+    if('mediaSession' in navigator){
+      try{ navigator.mediaSession.playbackState = 'playing'; }catch(e){}
+    }
   }).catch(() => {
     if(retriesLeft > 0){
       statusEl.textContent = 'Пробуем ещё раз…';
