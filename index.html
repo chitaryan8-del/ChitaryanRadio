@@ -234,8 +234,8 @@ const SUPABASE_URL = 'https://czqoftvkccivkinttswl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6cW9mdHZrY2NpdmtpbnR0c3dsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk5ODQwNDQsImV4cCI6MjEwNTU2MDA0NH0.A1fSOyYv_T8c1tLFncmX-bL90NIbZYDhnL_JvqcGlNM';
 const BUCKET = 'tracks';
 const STATION_NAME = 'CHITARYAN RADIO';
-const STATION_SUBTITLE = 'UNDERGROUND LIFE · 24/7';
-const STATION_ABOUT = 'Сделал CHITARYAN. Underground/old school hip-hop, techno и музыка своих. Мои треки, треки друзей и то, что хочется слушать. Новая ротация каждую неделю.';
+const STATION_SUBTITLE = 'UNDERGROUND TRANSMISSION · 24/7';
+const STATION_ABOUT = 'Здесь можно написать пару строк о твоей радиостанции.';
 const BEATS_LINK_URL = 'https://t.me/ChitaryanBeats';
 const BEATS_LINK_LABEL = 'Мой канал с битами и прочим';
 
@@ -404,14 +404,14 @@ const IMAGE_EXT = ['jpg','jpeg','png','webp','gif'];
 
 async function fetchCoversFromSupabase(){
   try{
-    const res = await fetch(SUPABASE_URL + '/storage/v1/object/list/' + BUCKET + '/covers', {
+    const res = await fetch(SUPABASE_URL + '/storage/v1/object/list/' + BUCKET, {
       method: 'POST',
       headers: {
         'apikey': SUPABASE_ANON_KEY,
         'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ prefix: '', limit: 200, sortBy: { column: 'name', order: 'asc' } })
+      body: JSON.stringify({ prefix: 'covers', limit: 200, sortBy: { column: 'name', order: 'asc' } })
     });
     if(!res.ok) return [];
     const files = await res.json();
