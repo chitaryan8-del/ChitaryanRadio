@@ -251,7 +251,7 @@
   </div>
 
   <div class="controls">
-    <button class="playbtn" id="playBtn"><span class="tx-ring" id="txRing"></span>▶</button>
+    <button class="playbtn" id="playBtn"><span class="tx-ring" id="txRing"></span><span id="playIcon">▶</span></button>
     <div class="status" id="status"></div>
   </div>
 </div>
@@ -333,6 +333,7 @@ const EPOCH = new Date('2026-01-01T00:00:00Z').getTime();
 const audio = new Audio();
 audio.preload = 'auto';
 const playBtn = document.getElementById('playBtn');
+const playIconEl = document.getElementById('playIcon');
 const titleEl = document.getElementById('trackTitle');
 const tagEl = document.getElementById('trackTag');
 const nextTitleEl = document.getElementById('nextTitle');
@@ -348,48 +349,12 @@ const totalTimeEl = document.getElementById('totalTime');
 const coverWrapEl = document.querySelector('.cover-wrap');
 const txRingEl = document.getElementById('txRing');
 
-let audioCtx = null, analyser = null, freqData = null, vizRafId = null;
-const eqBars = Array.from(eqEl.querySelectorAll('span'));
-
-function setupVisualizer(){
-  if(audioCtx) return;
-  try{
-    const AC = window.AudioContext || window.webkitAudioContext;
-    audioCtx = new AC();
-    const source = audioCtx.createMediaElementSource(audio);
-    analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 64;
-    analyser.smoothingTimeConstant = 0.75;
-    freqData = new Uint8Array(analyser.frequencyBinCount);
-    source.connect(analyser);
-    analyser.connect(audioCtx.destination);
-  }catch(e){ audioCtx = null; analyser = null; }
-}
-
-function vizLoop(){
-  vizRafId = requestAnimationFrame(vizLoop);
-  if(!analyser) return;
-  analyser.getByteFrequencyData(freqData);
-  const bins = [2, 5, 9, 14, 20];
-  eqBars.forEach((bar, i) => {
-    const v = freqData[bins[i]] || 0;
-    const h = Math.max(2, Math.round((v / 255) * 12));
-    bar.style.height = h + 'px';
-    bar.style.animation = 'none';
-  });
-}
-
 function startVisualizer(){
-  setupVisualizer();
-  if(audioCtx && audioCtx.state === 'suspended'){ audioCtx.resume().catch(()=>{}); }
-  if(analyser && !vizRafId){ vizLoop(); }
   coverWrapEl.classList.add('breathing');
   txRingEl.classList.add('on');
 }
 
 function stopVisualizer(){
-  if(vizRafId){ cancelAnimationFrame(vizRafId); vizRafId = null; }
-  eqBars.forEach(bar => { bar.style.height = ''; bar.style.animation = ''; });
   coverWrapEl.classList.remove('breathing');
   txRingEl.classList.remove('on');
 }
@@ -710,8 +675,9 @@ playBtn.addEventListener('click', () => {
   } else {
     audio.pause();
     playing = false;
-    playBtn.textContent = '▶';
+    playIconEl.textContent = '▶';
     eqEl.classList.remove('playing');
+    stopVisualizer();
     if('mediaSession' in navigator){
       try{ navigator.mediaSession.playbackState = 'paused'; }catch(e){}
     }
@@ -721,7 +687,7 @@ playBtn.addEventListener('click', () => {
 function attemptPlay(retriesLeft){
   audio.play().then(() => {
     playing = true;
-    playBtn.textContent = '❚❚';
+    playIconEl.textContent = '❚❚';
     playBtn.classList.add('pulse');
     setTimeout(() => playBtn.classList.remove('pulse'), 500);
     eqEl.classList.add('playing');
