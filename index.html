@@ -789,7 +789,9 @@ setInterval(() => sync(false), 1000);
   const startBtn = document.getElementById('gameStartBtn');
 
   let running = false, rafId = null;
-  let items = [], score = 0, lives = 3, spawnTimer = 0, speed = 1.6;
+  let items = [], particles = [], popups = [];
+  let score = 0, lives = 3, spawnTimer = 0, speed = 1.6, combo = 0, lastLevel = 0;
+  let flash = 0;
   let best = 0;
   try{ best = Number(localStorage.getItem('sprayRunBest')) || 0; }catch(e){}
   bestEl.textContent = best;
@@ -804,7 +806,8 @@ setInterval(() => sync(false), 1000);
   window.addEventListener('resize', resize);
 
   function reset(){
-    items = []; score = 0; lives = 3; speed = 1.6; spawnTimer = 0;
+    items = []; particles = []; popups = [];
+    score = 0; lives = 3; speed = 1.6; spawnTimer = 0; combo = 0; lastLevel = 0; flash = 0;
     scoreEl.textContent = '0';
     livesEl.textContent = '●●●';
   }
@@ -820,16 +823,20 @@ setInterval(() => sync(false), 1000);
 
   function spawn(){
     const rect = canvas.getBoundingClientRect();
+    const gold = Math.random() < 0.12;
     items.push({
       x: 22 + Math.random() * Math.max(10, rect.width - 44),
       y: -18,
-      r: 16 + Math.random() * 5,
-      hue: TAG_PALETTE[Math.floor(Math.random() * TAG_PALETTE.length)],
+      r: gold ? 14 + Math.random() * 3 : 16 + Math.random() * 5,
+      hue: gold ? 42 : TAG_PALETTE[Math.floor(Math.random() * TAG_PALETTE.length)],
+      gold: gold,
+      value: gold ? 3 : 1,
       drip: 6 + Math.random() * 14,
       light: Math.random() > 0.4 ? '#ffffff' : '#0a0a0b',
-      vy: speed + Math.random() * 1.2,
+      vy: (gold ? speed * 1.35 : speed) + Math.random() * 1.2,
       rot: (Math.random() - .5) * .35,
-      pulse: Math.random() * Math.PI * 2
+      pulse: Math.random() * Math.PI * 2,
+      trail: []
     });
   }
 
@@ -861,15 +868,29 @@ setInterval(() => sync(false), 1000);
     ctx.beginPath(); ctx.moveTo(10,h-17); ctx.lineTo(w-10,h-17); ctx.stroke();
   }
 
+  function drawTrail(it){
+    for(let i = 0; i < it.trail.length; i++){
+      const t = it.trail[i];
+      const op = (i / it.trail.length) * 0.18;
+      ctx.beginPath();
+      ctx.fillStyle = 'hsla(' + it.hue + ',70%,55%,' + op.toFixed(2) + ')';
+      ctx.arc(t.x, t.y, it.r * (0.5 + i/it.trail.length*0.4), 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
+
   function drawTag(it){
-    const p = 1 + Math.sin(performance.now()/170 + it.pulse)*.08;
+    drawTrail(it);
+    const pulseSpeed = it.gold ? 90 : 170;
+    const p = 1 + Math.sin(performance.now()/pulseSpeed + it.pulse) * (it.gold ? .16 : .08);
     ctx.save(); ctx.translate(it.x,it.y); ctx.rotate(it.rot); ctx.scale(p,p);
-    // spray-cloud blob, same warm palette as the generated album covers
-    ctx.shadowColor = 'hsla(' + it.hue + ',75%,50%,.55)'; ctx.shadowBlur = 16;
-    ctx.fillStyle = 'hsla(' + it.hue + ',75%,52%,.85)';
+    // spray-cloud blob, same warm palette as the generated album covers (gold = bonus)
+    ctx.shadowColor = 'hsla(' + it.hue + ',85%,55%,.65)'; ctx.shadowBlur = it.gold ? 22 : 16;
+    ctx.fillStyle = 'hsla(' + it.hue + ',' + (it.gold ? '90%,58%' : '75%,52%') + ',.9)';
     ctx.beginPath(); ctx.arc(0,0,it.r,0,Math.PI*2); ctx.fill();
     ctx.shadowBlur = 0;
-    ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 1;
+    ctx.strokeStyle = it.gold ? 'rgba(255,255,255,.85)' : 'rgba(255,255,255,.5)';
+    ctx.lineWidth = it.gold ? 1.5 : 1;
     ctx.beginPath(); ctx.arc(0,0,it.r,0,Math.PI*2); ctx.stroke();
     // paint drip running down, like the cover-art splatter
     ctx.fillStyle = it.light;
@@ -883,8 +904,46 @@ setInterval(() => sync(false), 1000);
     ctx.fill();
     ctx.globalAlpha = 1;
     // small paint-splash dot in the middle
-    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0,0,2.5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0,0,it.gold ? 3 : 2.5,0,Math.PI*2); ctx.fill();
     ctx.restore();
+  }
+
+  function burstParticles(x,y,hue,count){
+    for(let i=0;i<count;i++){
+      const ang = Math.random()*Math.PI*2, sp = 1.5 + Math.random()*3;
+      particles.push({ x, y, vx: Math.cos(ang)*sp, vy: Math.sin(ang)*sp, life: 1, hue });
+    }
+  }
+
+  function drawParticles(){
+    for(let i=particles.length-1;i>=0;i--){
+      const p = particles[i];
+      p.x += p.vx; p.y += p.vy; p.vy += 0.08; p.life -= 0.035;
+      if(p.life <= 0){ particles.splice(i,1); continue; }
+      ctx.fillStyle = 'hsla(' + p.hue + ',80%,60%,' + p.life.toFixed(2) + ')';
+      ctx.beginPath(); ctx.arc(p.x,p.y,2.2*p.life+0.5,0,Math.PI*2); ctx.fill();
+    }
+  }
+
+  function drawPopups(){
+    for(let i=popups.length-1;i>=0;i--){
+      const p = popups[i];
+      p.y -= 0.6; p.life -= 0.02;
+      if(p.life <= 0){ popups.splice(i,1); continue; }
+      ctx.save();
+      ctx.globalAlpha = Math.max(0,p.life);
+      ctx.fillStyle = p.gold ? '#ffd15c' : '#fff';
+      ctx.font = 'bold ' + (p.gold ? 16 : 13) + 'px ' + "'JetBrains Mono', monospace";
+      ctx.textAlign = 'center';
+      ctx.fillText(p.text, p.x, p.y);
+      ctx.restore();
+    }
+  }
+
+  function showLevelFlash(text){
+    flash = 1;
+    const rect = canvas.getBoundingClientRect();
+    popups.push({ x: rect.width/2, y: rect.height/2, text: text, life: 1.4, gold: true });
   }
 
   function loop(){
@@ -893,16 +952,29 @@ setInterval(() => sync(false), 1000);
     const rect = canvas.getBoundingClientRect();
     drawBackground(rect.width,rect.height);
     spawnTimer++;
-    if(spawnTimer > Math.max(22,50-score)){ spawn(); spawnTimer=0; }
+    if(spawnTimer > Math.max(20,48-score)){ spawn(); spawnTimer=0; }
     for(let i=items.length-1;i>=0;i--){
-      const it=items[i]; it.y += it.vy; drawTag(it);
+      const it=items[i];
+      it.trail.unshift({x: it.x, y: it.y});
+      if(it.trail.length > 4) it.trail.pop();
+      it.y += it.vy;
+      drawTag(it);
       if(it.y > rect.height + 20){
-        items.splice(i,1); lives--;
+        items.splice(i,1); lives--; combo = 0;
         livesEl.textContent='●'.repeat(Math.max(0,lives))+'○'.repeat(3-Math.max(0,lives));
         if(lives<=0){ endGame(); return; }
       }
     }
+    drawParticles();
+    drawPopups();
+    if(flash > 0){
+      ctx.fillStyle = 'rgba(255,209,92,' + (flash*0.14).toFixed(2) + ')';
+      ctx.fillRect(0,0,rect.width,rect.height);
+      flash -= 0.03;
+    }
     speed = 1.6 + score*.04;
+    const level = Math.floor(score/10);
+    if(level > lastLevel){ lastLevel = level; showLevelFlash('LEVEL ' + (level+1)); }
   }
 
   function hitTest(clientX,clientY){
@@ -910,10 +982,18 @@ setInterval(() => sync(false), 1000);
     for(let i=items.length-1;i>=0;i--){
       const it=items[i], d=Math.hypot(it.x-x,it.y-y);
       if(d<it.r+14){
-        // hit flash without changing the original one-tap mechanic
-        ctx.save(); ctx.strokeStyle='rgba(255,255,255,.85)'; ctx.lineWidth=2;
-        ctx.beginPath(); ctx.arc(it.x,it.y,it.r+7,0,Math.PI*2); ctx.stroke(); ctx.restore();
-        items.splice(i,1); score++; scoreEl.textContent=String(score); return;
+        combo++;
+        const gain = it.value + Math.floor(combo/5);
+        burstParticles(it.x, it.y, it.hue, it.gold ? 16 : 9);
+        popups.push({
+          x: it.x, y: it.y - it.r,
+          text: (it.gold ? '★ +' : '+') + gain + (combo >= 5 ? ' x' + Math.floor(1+combo/5) : ''),
+          life: 1, gold: it.gold
+        });
+        items.splice(i,1);
+        score += gain;
+        scoreEl.textContent=String(score);
+        return;
       }
     }
   }
