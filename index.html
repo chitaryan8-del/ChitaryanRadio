@@ -63,7 +63,22 @@
 
   .cover-wrap{position:relative;width:calc(100% - 36px);margin:0 18px;aspect-ratio:1/1;overflow:hidden;
     background:#151517;border-radius:14px;border:1px solid var(--line);
-    box-shadow:0 18px 40px -18px rgba(0,0,0,.7);}
+    box-shadow:0 18px 40px -18px rgba(0,0,0,.7);
+    transition:transform 2.2s ease-in-out, box-shadow 2.2s ease-in-out;}
+  .cover-wrap.breathing{animation:breathe 4.5s ease-in-out infinite;}
+  @keyframes breathe{
+    0%,100%{transform:scale(1);box-shadow:0 18px 40px -18px rgba(0,0,0,.7);}
+    50%{transform:scale(1.012);box-shadow:0 22px 50px -16px rgba(224,41,63,.28);}
+  }
+  .cover-wrap.glitch{animation:glitchFx .35s steps(2,end);}
+  @keyframes glitchFx{
+    0%{filter:none;transform:translate(0,0);}
+    20%{filter:hue-rotate(30deg) saturate(2);transform:translate(-3px,0);}
+    40%{filter:hue-rotate(-20deg) saturate(1.4);transform:translate(3px,0);}
+    60%{filter:invert(.06);transform:translate(-2px,0);}
+    80%{filter:none;transform:translate(1px,0);}
+    100%{filter:none;transform:translate(0,0);}
+  }
   .cover-img{width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .5s ease;filter:saturate(.96);}
   .cover-img.shown{opacity:1;}
   .cover-fallback{width:100%;height:100%;background:#151517;opacity:0;transition:opacity .5s ease;}
@@ -102,9 +117,11 @@
   .progress-wrap{padding:16px 18px 0;}
   .progress-times{display:flex;justify-content:space-between;font-family:var(--mono);
     font-size:10.5px;color:var(--hint);margin-bottom:6px;letter-spacing:.5px;}
-  .progress-track{height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;}
+  .progress-track{height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;position:relative;}
   .progress-fill{height:100%;width:0%;background:var(--accent);transition:width 1s linear, background 1s ease;
-    box-shadow:0 0 6px 0 var(--accent);}
+    box-shadow:0 0 6px 0 var(--accent);position:relative;}
+  .progress-fill::after{content:"";position:absolute;right:-2px;top:50%;transform:translateY(-50%);
+    width:6px;height:6px;border-radius:50%;background:#fff;box-shadow:0 0 8px 2px var(--accent);}
 
   .next-row{display:flex;align-items:center;justify-content:space-between;
     padding:14px 18px;margin-top:6px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
@@ -116,27 +133,49 @@
   .playbtn{width:96px;height:58px;border-radius:14px;border:1px solid rgba(255,255,255,.14);
     background:linear-gradient(180deg,#232226,#141316);color:#fff;
     font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;
-    transition:transform .12s ease, box-shadow .15s ease;
+    transition:transform .12s ease, box-shadow .15s ease;position:relative;
     box-shadow:0 6px 0 0 #060607, 0 10px 20px -6px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.06);}
   .playbtn:active{transform:translateY(4px);box-shadow:0 2px 0 0 #060607, 0 4px 10px -4px rgba(0,0,0,.6);}
   .playbtn.pulse{animation:btnPulse .5s ease-out;}
   @keyframes btnPulse{0%{box-shadow:0 6px 0 0 #060607, 0 0 0 0 rgba(224,41,63,.45);}100%{box-shadow:0 6px 0 0 #060607, 0 0 0 20px rgba(224,41,63,0);}}
+  .tx-ring{position:absolute;inset:-9px;border-radius:18px;border:1.5px dashed rgba(224,41,63,0);
+    pointer-events:none;transition:border-color .3s ease;}
+  .tx-ring.on{border-color:rgba(224,41,63,.55);animation:txSpin 6s linear infinite;}
+  @keyframes txSpin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
   .status{color:var(--hint);font-family:var(--mono);font-size:11px;min-height:16px;letter-spacing:.5px;}
 
-  .tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;gap:8px;
+  .tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;gap:6px;
     background:rgba(10,10,11,.92);backdrop-filter:blur(10px);border-top:1px solid var(--line);
-    padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));}
-  .tab{color:var(--hint);font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;
-    background:none;border:1px solid transparent;border-radius:9px;cursor:pointer;padding:9px 20px;
-    display:flex;align-items:center;gap:7px;transition:color .15s ease, background .15s ease, border-color .15s ease;}
+    padding:10px 10px calc(10px + env(safe-area-inset-bottom,0px));}
+  .tab{color:var(--hint);font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;
+    background:none;border:1px solid transparent;border-radius:9px;cursor:pointer;padding:9px 14px;
+    display:flex;align-items:center;gap:6px;transition:color .15s ease, background .15s ease, border-color .15s ease;}
   .tab .ic{width:6px;height:6px;border-radius:1px;background:currentColor;opacity:.5;transform:rotate(45deg);}
   .tab.active{color:#fff;background:rgba(224,41,63,.1);border-color:rgba(224,41,63,.4);}
   .tab.active .ic{background:var(--accent);opacity:1;}
 
+  .game-panel{display:none;padding:16px 18px 8px;}
+  .game-panel.active{display:block;animation:panelIn .35s ease;}
+  .game-hud{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;
+    font-family:var(--mono);font-size:12px;letter-spacing:1px;color:var(--hint);}
+  .game-hud b{color:#fff;font-size:16px;}
+  #gameCanvas{width:100%;aspect-ratio:3/4;background:#111114;border-radius:14px;
+    border:1px solid var(--line);display:block;touch-action:none;}
+  .game-overlay{position:relative;}
+  .game-msg{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:14px;background:rgba(8,8,9,.72);border-radius:14px;text-align:center;padding:20px;}
+  .game-msg.hide{display:none;}
+  .game-msg h3{margin:0;font-size:20px;text-transform:uppercase;letter-spacing:.5px;}
+  .game-msg p{margin:0;color:var(--hint);font-family:var(--mono);font-size:12px;}
+  .game-btn{padding:12px 26px;border-radius:10px;border:none;background:var(--accent);color:#fff;
+    font-weight:700;font-family:var(--mono);letter-spacing:1px;text-transform:uppercase;font-size:12px;cursor:pointer;}
+
   .info-panel{display:none;padding:22px 20px;color:var(--hint);font-size:14px;line-height:1.6;}
   .info-panel p{white-space:pre-line;}
-  .info-panel.active{display:block;}
+  .info-panel.active{display:block;animation:panelIn .35s ease;}
   .player-view.hidden{display:none;}
+  .player-view:not(.hidden){animation:panelIn .35s ease;}
+  @keyframes panelIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
 
   .beats-link{display:flex;align-items:center;justify-content:center;gap:8px;
     margin-top:20px;padding:14px 18px;border-radius:12px;text-decoration:none;
@@ -212,7 +251,7 @@
   </div>
 
   <div class="controls">
-    <button class="playbtn" id="playBtn">▶</button>
+    <button class="playbtn" id="playBtn"><span class="tx-ring" id="txRing"></span><span id="playIcon">▶</span></button>
     <div class="status" id="status"></div>
   </div>
 </div>
@@ -222,9 +261,26 @@
   <a class="beats-link" id="beatsLink" href="#" target="_blank" rel="noopener"></a>
 </div>
 
+<div class="game-panel" id="gamePanel">
+  <div class="game-hud">
+    <span>SCORE: <b id="gameScore">0</b></span>
+    <span>BEST: <b id="gameBest">0</b></span>
+    <span id="gameLives">●●●</span>
+  </div>
+  <div class="game-overlay">
+    <canvas id="gameCanvas"></canvas>
+    <div class="game-msg" id="gameMsg">
+      <h3>SPRAY RUN</h3>
+      <p>Тапай по тегам, пока не улетели вниз</p>
+      <button class="game-btn" id="gameStartBtn">Играть</button>
+    </div>
+  </div>
+</div>
+
 <div class="tabbar">
   <button class="tab active" id="tabAir"><span class="ic"></span>Radio</button>
   <button class="tab" id="tabInfo"><span class="ic"></span>About</button>
+  <button class="tab" id="tabGame"><span class="ic"></span>Game</button>
 </div>
 
 <script>
@@ -276,7 +332,32 @@ const EPOCH = new Date('2026-01-01T00:00:00Z').getTime();
 
 const audio = new Audio();
 audio.preload = 'auto';
+audio.playsInline = true;
+audio.setAttribute('playsinline', '');
+
+// Надёжная диагностика и восстановление воспроизведения в Telegram WebView.
+audio.addEventListener('error', () => {
+  const err = audio.error;
+  const code = err ? err.code : 0;
+  const names = {1:'MEDIA_ERR_ABORTED',2:'MEDIA_ERR_NETWORK',3:'MEDIA_ERR_DECODE',4:'MEDIA_ERR_SRC_NOT_SUPPORTED'};
+  console.warn('[CHITARYAN RADIO] Audio error:', names[code] || code, audio.src);
+  statusEl && (statusEl.textContent = 'Ошибка воспроизведения: ' + (names[code] || 'аудиофайл'));
+  playing = false;
+  playIconEl && (playIconEl.textContent = '▶');
+  eqEl && eqEl.classList.remove('playing');
+  stopVisualizer();
+});
+
+audio.addEventListener('ended', () => {
+  playing = false;
+  playIconEl && (playIconEl.textContent = '▶');
+  eqEl && eqEl.classList.remove('playing');
+  stopVisualizer();
+  setTimeout(() => sync(true), 0);
+});
+
 const playBtn = document.getElementById('playBtn');
+const playIconEl = document.getElementById('playIcon');
 const titleEl = document.getElementById('trackTitle');
 const tagEl = document.getElementById('trackTag');
 const nextTitleEl = document.getElementById('nextTitle');
@@ -289,13 +370,29 @@ const coverFallback = document.getElementById('coverFallback');
 const trackCounterEl = document.getElementById('trackCounter');
 const elapsedTimeEl = document.getElementById('elapsedTime');
 const totalTimeEl = document.getElementById('totalTime');
+const coverWrapEl = document.querySelector('.cover-wrap');
+const txRingEl = document.getElementById('txRing');
+
+function startVisualizer(){
+  coverWrapEl.classList.add('breathing');
+  txRingEl.classList.add('on');
+}
+
+function stopVisualizer(){
+  coverWrapEl.classList.remove('breathing');
+  txRingEl.classList.remove('on');
+}
 document.getElementById('tabAir').addEventListener('click', () => switchTab('air'));
 document.getElementById('tabInfo').addEventListener('click', () => switchTab('info'));
+document.getElementById('tabGame').addEventListener('click', () => switchTab('game'));
 function switchTab(which){
   document.getElementById('playerView').classList.toggle('hidden', which !== 'air');
   document.getElementById('infoPanel').classList.toggle('active', which === 'info');
+  document.getElementById('gamePanel').classList.toggle('active', which === 'game');
   document.getElementById('tabAir').classList.toggle('active', which === 'air');
   document.getElementById('tabInfo').classList.toggle('active', which === 'info');
+  document.getElementById('tabGame').classList.toggle('active', which === 'game');
+  if(which !== 'game') pauseGame();
 }
 
 let schedule = [];
@@ -571,19 +668,35 @@ function sync(forceLoad){
 
   if(idx !== currentIndex || forceLoad){
     currentIndex = idx;
+
+    // Сначала полностью переключаем источник. Нельзя задавать currentTime
+    // сразу после audio.src: в Telegram WebView metadata ещё может быть не загружена.
+    audio.pause();
     audio.src = track.url;
+    audio.load();
+
     titleEl.textContent = track.title;
     titleEl.classList.remove('animate');
     void titleEl.offsetWidth;
     titleEl.classList.add('animate');
     tagEl.textContent = track.tag;
     applyCover(track);
+    if(playing) coverWrapEl.classList.add('glitch');
+    setTimeout(() => coverWrapEl.classList.remove('glitch'), 400);
     if(playing){
-      audio.currentTime = offsetInTrack;
-      audio.play().catch(()=>{});
+      const setPositionAndPlay = () => {
+        try{
+          if(Number.isFinite(offsetInTrack) && offsetInTrack >= 0 && offsetInTrack < (audio.duration || Infinity)){
+            audio.currentTime = offsetInTrack;
+          }
+        }catch(e){ console.warn('[CHITARYAN RADIO] currentTime:', e); }
+        attemptPlay(1);
+      };
+      if(audio.readyState >= 1) setPositionAndPlay();
+      else audio.addEventListener('loadedmetadata', setPositionAndPlay, {once:true});
     }
-  } else if(playing && Math.abs(audio.currentTime - offsetInTrack) > 1.5){
-    audio.currentTime = offsetInTrack;
+  } else if(playing && Number.isFinite(audio.duration) && Math.abs(audio.currentTime - offsetInTrack) > 1.5){
+    try{ audio.currentTime = Math.max(0, Math.min(offsetInTrack, audio.duration - 0.1)); }catch(e){}
   }
 }
 
@@ -600,8 +713,9 @@ playBtn.addEventListener('click', () => {
   } else {
     audio.pause();
     playing = false;
-    playBtn.textContent = '▶';
+    playIconEl.textContent = '▶';
     eqEl.classList.remove('playing');
+    stopVisualizer();
     if('mediaSession' in navigator){
       try{ navigator.mediaSession.playbackState = 'paused'; }catch(e){}
     }
@@ -609,27 +723,158 @@ playBtn.addEventListener('click', () => {
 });
 
 function attemptPlay(retriesLeft){
+  if(!audio.src){
+    statusEl.textContent = 'Аудио ещё не загружено';
+    return;
+  }
   audio.play().then(() => {
     playing = true;
-    playBtn.textContent = '❚❚';
+    playIconEl.textContent = '❚❚';
     playBtn.classList.add('pulse');
     setTimeout(() => playBtn.classList.remove('pulse'), 500);
     eqEl.classList.add('playing');
     statusEl.textContent = '';
+    startVisualizer();
     if('mediaSession' in navigator){
       try{ navigator.mediaSession.playbackState = 'playing'; }catch(e){}
     }
-  }).catch(() => {
+  }).catch((err) => {
+    console.warn('[CHITARYAN RADIO] play() rejected:', err);
     if(retriesLeft > 0){
       statusEl.textContent = 'Пробуем ещё раз…';
-      setTimeout(() => attemptPlay(retriesLeft - 1), 1200);
+      setTimeout(() => attemptPlay(retriesLeft - 1), 900);
     } else {
-      statusEl.textContent = 'Не удалось начать воспроизведение';
+      const reason = err && err.name === 'NotAllowedError'
+        ? 'Нажми Play ещё раз'
+        : 'Не удалось начать воспроизведение';
+      statusEl.textContent = reason;
     }
   });
 }
 
 setInterval(() => sync(false), 1000);
+
+// ==== SPRAY RUN game ====
+(function(){
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('gameScore');
+  const bestEl = document.getElementById('gameBest');
+  const livesEl = document.getElementById('gameLives');
+  const msgEl = document.getElementById('gameMsg');
+  const startBtn = document.getElementById('gameStartBtn');
+  const TAGS = ['🎨','🖍️','💥','⚡','🔥','✳️'];
+
+  let running = false, rafId = null;
+  let items = [], score = 0, lives = 3, spawnTimer = 0, speed = 1.6;
+  let best = 0;
+  try{ best = Number(localStorage.getItem('sprayRunBest')) || 0; }catch(e){}
+  bestEl.textContent = best;
+
+  function resize(){
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * devicePixelRatio;
+    canvas.height = rect.height * devicePixelRatio;
+    ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  }
+  window.addEventListener('resize', resize);
+
+  function reset(){
+    items = []; score = 0; lives = 3; speed = 1.6; spawnTimer = 0;
+    scoreEl.textContent = '0';
+    livesEl.textContent = '●●●';
+  }
+
+  function spawn(){
+    const rect = canvas.getBoundingClientRect();
+    items.push({
+      x: 20 + Math.random() * (rect.width - 40),
+      y: -20,
+      r: 18,
+      emoji: TAGS[Math.floor(Math.random() * TAGS.length)],
+      vy: speed + Math.random() * 1.2
+    });
+  }
+
+  function loop(){
+    if(!running) return;
+    rafId = requestAnimationFrame(loop);
+    const rect = canvas.getBoundingClientRect();
+    ctx.clearRect(0,0,rect.width,rect.height);
+
+    spawnTimer++;
+    if(spawnTimer > Math.max(22, 50 - score)){
+      spawn();
+      spawnTimer = 0;
+    }
+
+    for(let i = items.length - 1; i >= 0; i--){
+      const it = items[i];
+      it.y += it.vy;
+      ctx.font = '28px system-ui';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(it.emoji, it.x, it.y);
+      if(it.y > rect.height + 20){
+        items.splice(i,1);
+        lives--;
+        livesEl.textContent = '●'.repeat(Math.max(0,lives)) + '○'.repeat(3-Math.max(0,lives));
+        if(lives <= 0){ endGame(); return; }
+      }
+    }
+    speed = 1.6 + score * 0.04;
+  }
+
+  function hitTest(clientX, clientY){
+    const rect = canvas.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    for(let i = items.length - 1; i >= 0; i--){
+      const it = items[i];
+      const d = Math.hypot(it.x - x, it.y - y);
+      if(d < it.r + 14){
+        items.splice(i,1);
+        score++;
+        scoreEl.textContent = String(score);
+        return;
+      }
+    }
+  }
+
+  canvas.addEventListener('pointerdown', (e) => {
+    if(!running) return;
+    hitTest(e.clientX, e.clientY);
+  });
+
+  function startGame(){
+    resize();
+    reset();
+    running = true;
+    msgEl.classList.add('hide');
+    loop();
+  }
+
+  function endGame(){
+    running = false;
+    if(rafId) cancelAnimationFrame(rafId);
+    if(score > best){
+      best = score;
+      try{ localStorage.setItem('sprayRunBest', String(best)); }catch(e){}
+    }
+    bestEl.textContent = best;
+    msgEl.querySelector('h3').textContent = 'GAME OVER';
+    msgEl.querySelector('p').textContent = 'Счёт: ' + score + ' · Рекорд: ' + best;
+    startBtn.textContent = 'Ещё раз';
+    msgEl.classList.remove('hide');
+  }
+
+  window.pauseGame = function(){
+    running = false;
+    if(rafId) cancelAnimationFrame(rafId);
+  };
+
+  startBtn.addEventListener('click', startGame);
+})();
 
 async function init(){
   document.getElementById('stationName').textContent = STATION_NAME;
