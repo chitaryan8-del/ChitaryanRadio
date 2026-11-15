@@ -203,6 +203,12 @@
     color:#fff;font-weight:700;font-size:14px;letter-spacing:.3px;}
   .beats-link:active{background:rgba(224,41,63,.18);}
 
+  .boom-panel{display:none;position:fixed;left:0;right:0;z-index:1;flex-direction:column;}
+  .boom-panel.active{display:flex;animation:panelIn .35s ease;}
+  .boom-now{flex:0 0 auto;padding:0 18px 8px;font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--hint);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase;}
+  .boom-frame{flex:1;min-height:0;width:100%;border:0;border-top:1px solid var(--line);display:block;background:var(--bg);}
+
   .splash{position:fixed;inset:0;background:var(--bg);z-index:9999;
     display:flex;align-items:center;justify-content:center;
     transition:opacity .5s ease;}
@@ -304,10 +310,16 @@
   </div>
 </div>
 
+<div class="boom-panel" id="boomPanel">
+  <div class="boom-now" id="boomNow">♪ —</div>
+  <iframe class="boom-frame" id="boomFrame" title="Мегатонна" allow="autoplay; vibrate" loading="lazy"></iframe>
+</div>
+
 <div class="tabbar">
   <button class="tab active" id="tabAir"><span class="ic"></span>Radio</button>
   <button class="tab" id="tabInfo"><span class="ic"></span>About</button>
   <button class="tab" id="tabGame"><span class="ic"></span>Game</button>
+  <button class="tab" id="tabBoom"><span class="ic"></span>Boom</button>
 </div>
 
 <script>
@@ -411,6 +423,20 @@ function stopVisualizer(){
 document.getElementById('tabAir').addEventListener('click', () => switchTab('air'));
 document.getElementById('tabInfo').addEventListener('click', () => switchTab('info'));
 document.getElementById('tabGame').addEventListener('click', () => switchTab('game'));
+document.getElementById('tabBoom').addEventListener('click', () => switchTab('boom'));
+function layoutBoom(){
+  const panel = document.getElementById('boomPanel');
+  const sub = document.getElementById('stationSubtitle');
+  const bar = document.querySelector('.tabbar');
+  panel.style.top = Math.round(sub.getBoundingClientRect().bottom + window.scrollY) + 'px';
+  panel.style.bottom = bar.offsetHeight + 'px';
+}
+window.addEventListener('resize', () => { if(document.getElementById('boomPanel').classList.contains('active')) layoutBoom(); });
+setInterval(() => {
+  if(!document.getElementById('boomPanel').classList.contains('active')) return;
+  const t = document.getElementById('trackTitle').textContent;
+  document.getElementById('boomNow').textContent = '♪ ' + (t || 'CHITARYAN RADIO');
+}, 1000);
 function switchTab(which){
   document.getElementById('playerView').classList.toggle('hidden', which !== 'air');
   document.getElementById('infoPanel').classList.toggle('active', which === 'info');
@@ -418,7 +444,18 @@ function switchTab(which){
   document.getElementById('tabAir').classList.toggle('active', which === 'air');
   document.getElementById('tabInfo').classList.toggle('active', which === 'info');
   document.getElementById('tabGame').classList.toggle('active', which === 'game');
+  document.getElementById('boomPanel').classList.toggle('active', which === 'boom');
+  document.getElementById('tabBoom').classList.toggle('active', which === 'boom');
   if(which !== 'game') pauseGame();
+  if(which === 'boom'){
+    window.scrollTo(0, 0);
+    layoutBoom();
+    const fr = document.getElementById('boomFrame');
+    if(!fr.getAttribute('src')) fr.setAttribute('src', 'megatonna.html');
+    try{ Telegram.WebApp.disableVerticalSwipes(); }catch(e){}
+  }else{
+    try{ Telegram.WebApp.enableVerticalSwipes(); }catch(e){}
+  }
 }
 
 let schedule = [];
